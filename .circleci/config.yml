@@ -1,13 +1,57 @@
 version: 2.1
-jobs:
-  test:
-    docker:
-      - image: python:2.7
-    working_directory: ~/app
+commands:
+  build_and_test:
+    parameters:
+      db:
+        type: string
     steps:
+      - run: echo $(python --version) database=<< parameters.db >>
       - checkout
       - run: pip install .[test]
-      - run: DB=sqlite pytest
+      - run:
+          environment:
+            DB: << parameters.db >>
+          command: pytest
+executors:
+  python27:
+    working_directory: ~/app
+    docker:
+    - image: python:2.7
+    - image: postgres:10
+      environment:
+        POSTGRES_DB: sqlalchemy_continuum_test
+  python36:
+    working_directory: ~/app
+    docker:
+    - image: python:3.6
+    - image: postgres:10
+      environment:
+        POSTGRES_DB: sqlalchemy_continuum_test
+jobs:
+  test_sqlite:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: sqlite
+  test_postgres:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: postgres
+  test_postgres-native:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: postgres-native
   release:
     docker:
       - image: python:2.7
@@ -22,15 +66,34 @@ jobs:
           twine upload --repository-url https://geru-pypi.geru.com.br/ dist/*
 workflows:
   version: 2
-  test-always:
+  test_and_maybe_release:
     jobs:
-      - test
-  test-and-release:
-    jobs:
-      - test
+      - test_sqlite:
+          name: test_27_sqlite
+          run_with: python27
+      - test_postgres:
+          name: test_27_postgres
+          run_with: python27
+      - test_postgres-native:
+          name: test_27_postgres-native
+          run_with: python27
+      - test_sqlite:
+          name: test_36_sqlite
+          run_with: python36
+      - test_postgres:
+          name: test_36_postgres
+          run_with: python36
+      - test_postgres-native:
+          name: test_36_postgres-native
+          run_with: python36
       - release:
           requires:
-            - test
+            - test_27_sqlite
+            - test_27_postgres
+            - test_27_postgres-native
+            - test_36_sqlite
+            - test_36_postgres
+            - test_36_postgres-native
           filters:
             branches:
               only:
