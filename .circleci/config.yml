@@ -20,6 +20,9 @@ executors:
     - image: postgres:10
       environment:
         POSTGRES_DB: sqlalchemy_continuum_test
+    - image: mysql:8
+      environment:
+        MYSQL_DATABASE: sqlalchemy_continuum_test
   python36:
     working_directory: ~/app
     docker:
@@ -27,6 +30,9 @@ executors:
     - image: postgres:10
       environment:
         POSTGRES_DB: sqlalchemy_continuum_test
+    - image: mysql:8
+      environment:
+        MYSQL_DATABASE: sqlalchemy_continuum_test
 jobs:
   test_sqlite:
     parameters:
@@ -36,6 +42,14 @@ jobs:
     steps:
       - build_and_test:
           db: sqlite
+  test_mysql:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: mysql
   test_postgres:
     parameters:
       run_with:
@@ -71,6 +85,9 @@ workflows:
       - test_sqlite:
           name: test_27_sqlite
           run_with: python27
+      - test_mysql:
+          name: test_27_mysql
+          run_with: python27
       - test_postgres:
           name: test_27_postgres
           run_with: python27
@@ -79,6 +96,9 @@ workflows:
           run_with: python27
       - test_sqlite:
           name: test_36_sqlite
+          run_with: python36
+      - test_mysql:
+          name: test_36_mysql
           run_with: python36
       - test_postgres:
           name: test_36_postgres
