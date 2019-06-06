@@ -12,6 +12,12 @@ commands:
           environment:
             DB: << parameters.db >>
           command: pytest
+databases-config:
+  postgres: &postgres-config
+    POSTGRES_DB: sqlalchemy_continuum_test
+  mysql: &mysql-config
+    MYSQL_DATABASE: sqlalchemy_continuum_test
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
 executors:
   python27:
     working_directory: ~/app
@@ -19,30 +25,30 @@ executors:
     - image: python:2.7
     - image: postgres:10
       environment:
-        POSTGRES_DB: sqlalchemy_continuum_test
-    - image: mysql:8
+        <<: *postgres-config
+    - image: mysql:5
       environment:
-        MYSQL_DATABASE: sqlalchemy_continuum_test
+        <<: *mysql-config
   python36:
     working_directory: ~/app
     docker:
     - image: python:3.6
     - image: postgres:10
       environment:
-        POSTGRES_DB: sqlalchemy_continuum_test
-    - image: mysql:8
+        <<: *postgres-config
+    - image: mysql:5
       environment:
-        MYSQL_DATABASE: sqlalchemy_continuum_test
+        <<: *mysql-config
   python37:
     working_directory: ~/app
     docker:
     - image: python:3.7
     - image: postgres:10
       environment:
-        POSTGRES_DB: sqlalchemy_continuum_test
-    - image: mysql:8
+        <<: *postgres-config
+    - image: mysql:5
       environment:
-        MYSQL_DATABASE: sqlalchemy_continuum_test
+        <<: *mysql-config
 jobs:
   test_sqlite:
     parameters:
