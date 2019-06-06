@@ -44,7 +44,7 @@ def get_dns_from_driver(driver):
     if driver == 'postgres':
         return 'postgres://postgres@localhost/sqlalchemy_continuum_test'
     elif driver == 'mysql':
-        return 'mysql+pymysql://travis@localhost/sqlalchemy_continuum_test'
+        return 'mysql+pymysql://root@localhost/sqlalchemy_continuum_test'
     elif driver == 'sqlite':
         return 'sqlite:///:memory:'
     else:

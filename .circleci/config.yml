@@ -1,0 +1,154 @@
+version: 2.1
+commands:
+  build_and_test:
+    parameters:
+      db:
+        type: string
+    steps:
+      - run: echo $(python --version) database=<< parameters.db >>
+      - checkout
+      - run: pip install .[test]
+      - run:
+          environment:
+            DB: << parameters.db >>
+          command: pytest
+databases-config:
+  postgres: &postgres-config
+    POSTGRES_DB: sqlalchemy_continuum_test
+  mysql: &mysql-config
+    MYSQL_DATABASE: sqlalchemy_continuum_test
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+executors:
+  python27:
+    working_directory: ~/app
+    docker:
+    - image: python:2.7
+    - image: postgres:10
+      environment:
+        <<: *postgres-config
+    - image: mysql:5
+      environment:
+        <<: *mysql-config
+  python36:
+    working_directory: ~/app
+    docker:
+    - image: python:3.6
+    - image: postgres:10
+      environment:
+        <<: *postgres-config
+    - image: mysql:5
+      environment:
+        <<: *mysql-config
+  python37:
+    working_directory: ~/app
+    docker:
+    - image: python:3.7
+    - image: postgres:10
+      environment:
+        <<: *postgres-config
+    - image: mysql:5
+      environment:
+        <<: *mysql-config
+jobs:
+  test_sqlite:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: sqlite
+  test_mysql:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: mysql
+  test_postgres:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: postgres
+  test_postgres-native:
+    parameters:
+      run_with:
+        type: string
+    executor: << parameters.run_with >>
+    steps:
+      - build_and_test:
+          db: postgres-native
+  release:
+    docker:
+      - image: python:2.7
+    working_directory: ~/app
+    steps:
+      - checkout
+      - run: |
+          pip install twine
+          pip install .
+      - run: |
+          python setup.py sdist
+          twine upload --repository-url https://geru-pypi.geru.com.br/ dist/*
+workflows:
+  version: 2
+  test_and_maybe_release:
+    jobs:
+      - test_sqlite:
+          name: test_27_sqlite
+          run_with: python27
+      - test_mysql:
+          name: test_27_mysql
+          run_with: python27
+      - test_postgres:
+          name: test_27_postgres
+          run_with: python27
+      - test_postgres-native:
+          name: test_27_postgres-native
+          run_with: python27
+      - test_sqlite:
+          name: test_36_sqlite
+          run_with: python36
+      - test_mysql:
+          name: test_36_mysql
+          run_with: python36
+      - test_postgres:
+          name: test_36_postgres
+          run_with: python36
+      - test_postgres-native:
+          name: test_36_postgres-native
+          run_with: python36
+      - test_sqlite:
+          name: test_37_sqlite
+          run_with: python37
+      - test_mysql:
+          name: test_37_mysql
+          run_with: python37
+      - test_postgres:
+          name: test_37_postgres
+          run_with: python37
+      - test_postgres-native:
+          name: test_37_postgres-native
+          run_with: python37
+      - release:
+          requires:
+            - test_27_sqlite
+            - test_27_mysql
+            - test_27_postgres
+            - test_27_postgres-native
+            - test_36_sqlite
+            - test_36_mysql
+            - test_36_postgres
+            - test_36_postgres-native
+            - test_37_sqlite
+            - test_37_mysql
+            - test_37_postgres
+            - test_37_postgres-native
+          filters:
+            branches:
+              only:
+                - master
