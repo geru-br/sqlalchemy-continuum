@@ -33,6 +33,16 @@ executors:
     - image: mysql:8
       environment:
         MYSQL_DATABASE: sqlalchemy_continuum_test
+  python37:
+    working_directory: ~/app
+    docker:
+    - image: python:3.7
+    - image: postgres:10
+      environment:
+        POSTGRES_DB: sqlalchemy_continuum_test
+    - image: mysql:8
+      environment:
+        MYSQL_DATABASE: sqlalchemy_continuum_test
 jobs:
   test_sqlite:
     parameters:
@@ -106,14 +116,32 @@ workflows:
       - test_postgres-native:
           name: test_36_postgres-native
           run_with: python36
+      - test_sqlite:
+          name: test_37_sqlite
+          run_with: python37
+      - test_mysql:
+          name: test_37_mysql
+          run_with: python37
+      - test_postgres:
+          name: test_37_postgres
+          run_with: python37
+      - test_postgres-native:
+          name: test_37_postgres-native
+          run_with: python37
       - release:
           requires:
             - test_27_sqlite
+            - test_27_mysql
             - test_27_postgres
             - test_27_postgres-native
             - test_36_sqlite
+            - test_36_mysql
             - test_36_postgres
             - test_36_postgres-native
+            - test_37_sqlite
+            - test_37_mysql
+            - test_37_postgres
+            - test_37_postgres-native
           filters:
             branches:
               only:
